@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aramvisai Drone · NIT Srinagar fixed</title>
+  <!-- permissions policy for geolocation -->
+  <meta http-equiv="Permissions-Policy" content="geolocation=(self)">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; }
+    #map { height: 420px; border-radius: 12px; }
+    .card { transition: all 0.3s; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+    button { transition: all 0.3s; }
+    button:hover { transform: scale(1.05); }
+    table th, table td { padding: 12px 16px; }
+    .data-collector-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+  <header class="bg-gradient-to-r from-[#1f3c88] to-[#2a4a9e] text-white py-6 text-center shadow-xl">
+    <h1 class="text-4xl font-bold tracking-tight">🚁 Aramvisai Drone Design Studio</h1>
+    <p class="text-blue-200 mt-2 text-xl font-medium">An initiative of Dr. DkR research lab</p>
+    <p class="text-blue-200 mt-1">20+ Parameters · Frame type/size · AI auto‑collector (1000+ samples)</p>
+  </header>
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Left: Parameters -->
+      <div class="lg:col-span-5 bg-white rounded-3xl shadow-2xl p-8 card">
+        <h3 class="text-2xl font-semibold text-[#1f3c88] mb-6 flex items-center gap-2">
+          ⚙️ Drone Configuration
+        </h3>
+        <div class="space-y-5">
+          <!-- Mode -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mode</label>
+            <select id="mode" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-300">
+              <option value="auto">Auto AI Design (collecting data)</option>
+              <option value="manual">Manual Override</option>
+            </select>
+          </div>
+
+          <!-- FRAME TYPE + FRAME SIZE -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Frame Type</label>
+              <select id="frameType" class="w-full p-3 border rounded-xl bg-gray-50">
+                <option value="True X">True X (balanced)</option>
+                <option value="Wide X">Wide X (freestyle)</option>
+                <option value="Stretch X">Stretch X (racing)</option>
+                <option value="Dead Cat">Dead Cat (camera view)</option>
+                <option value="H Frame">H Frame</option>
+                <option value="HX Frame">HX Frame</option>
+                <option value="Z Frame">Z Frame (prop wash)</option>
+                <option value="Plus Frame">Plus Frame</option>
+                <option value="Ducted">Ducted (prop guard)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Frame Size</label>
+              <div class="flex gap-2">
+                <select id="frameSizeSelect" class="w-2/3 p-3 border rounded-xl bg-gray-50">
+                  <option value="3"">3" (micro)</option>
+                  <option value="4"">4" (small)</option>
+                  <option value="5"" selected>5" (standard)</option>
+                  <option value="6"">6"</option>
+                  <option value="7"">7"</option>
+                  <option value="10"">10"</option>
+                  <option value="11"">11"</option>
+                  <option value="13"">13"</option>
+                </select>
+                <input id="frameSizeCustom" type="number" value="5" min="1" max="30" step="0.1" placeholder="custom" class="w-1/3 p-3 border rounded-xl">
+              </div>
+              <p class="text-xs text-gray-500 mt-1">dropdown or custom value</p>
+            </div>
+          </div>
+
+          <!-- Payload + manual expected fly time -->
+          <div class="grid grid-cols-2 gap-4 items-end">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Payload (kg)</label>
+              <input id="payload" type="number" value="1" step="0.1" min="0" class="w-full p-3 border rounded-xl">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">⏱️ Expected Fly Time (min)</label>
+              <input id="manualFlyTime" type="number" value="25" min="0" step="0.5" class="w-full p-3 border rounded-xl bg-white">
+            </div>
+          </div>
+
+          <!-- Rotor Count -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Rotor Count</label>
+            <select id="rotors" class="w-full p-3 border rounded-xl">
+              <option value="4">Quad (4)</option>
+              <option value="6">Hex (6)</option>
+              <option value="8">Octo (8)</option>
+            </select>
+          </div>
+
+          <!-- Battery Details -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Battery Type</label>
+              <select id="batteryType" class="w-full p-3 border rounded-xl">
+                <option value="LiPo">LiPo (High Power)</option>
+                <option value="Li-ion">Li-ion (Long Endurance)</option>
+                <option value="LiFePO4">LiFePO4 (Safe & Stable)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cell Count (S)</label>
+              <input id="cells" type="number" value="4" min="1" max="12" step="1" class="w-full p-3 border rounded-xl">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Capacity (mAh)</label>
+              <input id="capacity" type="number" value="5200" min="500" step="100" class="w-full p-3 border rounded-xl">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">C-Rating</label>
+              <input id="crating" type="number" value="80" min="20" max="200" class="w-full p-3 border rounded-xl">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">ESC Voltage (V)</label>
+              <input id="escVoltage" type="number" value="14.8" min="3.7" max="50" step="0.1" class="w-full p-3 border rounded-xl">
+            </div>
+          </div>
+
+          <!-- PROPELLER BLOCK -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 mt-2 border-t border-blue-200">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Prop Diameter (inch)</label>
+              <input id="propDiameter" type="number" value="10" min="3" max="30" step="0.5" class="w-full p-3 border rounded-xl bg-blue-50">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pitch (inch)</label>
+              <input id="pitch" type="number" value="4.5" min="2" max="12" step="0.1" class="w-full p-3 border rounded-xl bg-gray-50">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Blades</label>
+              <select id="blades" class="w-full p-3 border rounded-xl bg-gray-50">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Chord/Width (inch)</label>
+              <input id="propWidth" type="number" value="1.0" min="0.5" max="3" step="0.1" class="w-full p-3 border rounded-xl bg-gray-50">
+            </div>
+          </div>
+
+          <!-- Manual override extra fields -->
+          <div id="manualControls" class="space-y-4 hidden">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Motor KV (manual)</label>
+              <input id="motor" type="number" value="1800" min="500" max="3500" step="50" class="w-full p-3 border rounded-xl">
+            </div>
+          </div>
+
+          <!-- AI Collector badge -->
+          <div class="flex items-center justify-between bg-purple-50 p-3 rounded-xl border border-purple-200">
+            <span class="text-sm font-medium text-purple-800">🧠 AI data collector</span>
+            <span id="collectorCount" class="bg-purple-200 text-purple-900 px-3 py-1 rounded-full text-xs font-bold">0 samples</span>
+          </div>
+
+          <!-- Run Simulation button -->
+          <button onclick="runSimulation()"
+                  class="w-full bg-[#1f3c88] hover:bg-blue-900 text-white font-bold py-4 rounded-2xl text-lg shadow-lg mt-4">
+            🚀 Run Simulation & Auto‑Collect (20+ Results)
+          </button>
+
+          <!-- result area -->
+          <div id="result" class="bg-gradient-to-br from-blue-50 to-green-50 p-6 rounded-2xl border border-blue-100 min-h-[520px] overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- Right: Map - NIT Srinagar fixed as default heading and location -->
+      <div class="lg:col-span-7 bg-white rounded-3xl shadow-2xl p-8 card">
+        <h3 class="text-2xl font-semibold text-[#1f3c88] mb-6">📍 NIT Srinagar</h3>
+        
+        <div class="mb-4 p-3 bg-yellow-50 rounded-xl text-sm border border-yellow-200">
+          <p class="mb-2"><strong>Default location: NIT Srinagar (34.126°N, 74.840°E)</strong></p>
+          <button onclick="getUserLocation()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 w-full justify-center">
+            📍 Try Auto GPS (overrides default)
+          </button>
+        </div>
+
+        <!-- Manual lat/lon (pre-filled with NIT Srinagar) -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Manual Latitude</label>
+            <input id="manualLat" type="number" value="34.126" step="0.0001" class="w-full p-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Manual Longitude</label>
+            <input id="manualLon" type="number" value="74.840" step="0.0001" class="w-full p-2 border rounded-lg">
+          </div>
+        </div>
+        <button onclick="useManualLocation()" class="mb-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl w-full">
+          📍 Apply Manual Coordinates
+        </button>
+
+        <!-- Map (default view NIT Srinagar) -->
+        <div id="map" class="shadow-inner mb-4"></div>
+        
+        <!-- Environment Display (initially NIT Srinagar weather) -->
+        <div id="env" class="bg-slate-50 p-5 rounded-2xl text-sm border border-slate-200">
+          NIT Srinagar weather data loading...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+  <script>
+    tailwind.config = { content: [], theme: { extend: {} } };
+
+    // ---------- GLOBAL DATA COLLECTOR ----------
+    let collectedData = [];
+    let collectorCount = 0;
+    const MAX_SAMPLES = 1000;
+
+    function updateCollectorUI() {
+      document.getElementById('collectorCount').innerText = collectorCount + ' samples';
+    }
+
+    function addCurrentSampleToAI(simResults) {
+      const frameType = document.getElementById('frameType').value;
+      let frameSize = parseFloat(document.getElementById('frameSizeCustom').value);
+      if (isNaN(frameSize)) frameSize = parseFloat(document.getElementById('frameSizeSelect').value) || 5;
+
+      const sample = {
+        timestamp: new Date().toISOString(),
+        location: { lat: envData.lat || 34.126, lon: envData.lon || 74.840 },
+        weather: { temp: envData.temp, wind: envData.wind, humidity: envData.humidity, altitude: envData.altitude, density: envData.density },
+        frame: { type: frameType, size: frameSize },
+        payload: parseFloat(document.getElementById('payload').value) || 1,
+        rotors: parseInt(document.getElementById('rotors').value),
+        battery: {
+          type: document.getElementById('batteryType').value,
+          cells: parseInt(document.getElementById('cells').value) || 4,
+          capacity: parseFloat(document.getElementById('capacity').value) || 5200,
+          crating: parseFloat(document.getElementById('crating').value) || 80,
+          voltage: parseFloat(document.getElementById('escVoltage').value) || 14.8
+        },
+        propeller: {
+          diameter: parseFloat(document.getElementById('propDiameter').value) || 10,
+          pitch: parseFloat(document.getElementById('pitch').value) || 4.5,
+          blades: parseInt(document.getElementById('blades').value) || 2,
+          width: parseFloat(document.getElementById('propWidth').value) || 1.0
+        },
+        mode: document.getElementById('mode').value,
+        motorKV: simResults.kv || 1800,
+        simulation: {
+          thrustPerMotor: simResults.thrustPerMotor,
+          totalThrust: simResults.totalThrust,
+          totalWeight: simResults.totalWeight,
+          twr: simResults.twr,
+          flightTimeCalc: simResults.flightTimeCalc,
+          stability: simResults.stability
+        }
+      };
+
+      collectedData.push(sample);
+      collectorCount = collectedData.length;
+      if (collectorCount > MAX_SAMPLES) {
+        collectedData = collectedData.slice(-MAX_SAMPLES);
+        collectorCount = collectedData.length;
+      }
+      updateCollectorUI();
+
+      try {
+        localStorage.setItem('aramvisai_ai_samples', JSON.stringify(collectedData));
+      } catch(e) {}
+    }
+
+    function loadCollectedSamples() {
+      try {
+        const stored = localStorage.getItem('aramvisai_ai_samples');
+        if (stored) {
+          collectedData = JSON.parse(stored);
+          collectorCount = collectedData.length;
+          updateCollectorUI();
+        }
+      } catch(e) {}
+    }
+    loadCollectedSamples();
+
+    // ---------- MAP & ENVIRONMENT - DEFAULT NIT SRINAGAR ----------
+    let envData = { temp: 25, wind: 3, altitude: 1585, humidity: 50, density: 1.06, lat: 34.126, lon: 74.840 };
+
+    // Initialize map with NIT Srinagar view
+    let map = L.map('map').setView([34.126, 74.840], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    L.Control.geocoder({
+      defaultMarkGeocode: false,
+      placeholder: "Search any location...",
+      geocoder: L.Control.Geocoder.nominatim(),
+      position: 'topright'
+    }).on('markgeocode', function(e) {
+      let latlng = e.geocode.center;
+      setLocation(latlng.lat, latlng.lng);
+      map.setView(latlng, 13);
+    }).addTo(map);
+
+    let marker;
+    map.on("click", e => setLocation(e.latlng.lat, e.latlng.lng));
+
+    // Set default marker for NIT Srinagar
+    setTimeout(() => {
+      setLocation(34.126, 74.840);
+    }, 100);
+
+    function getUserLocation() {
+      if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById("manualLat").value = pos.coords.latitude.toFixed(6);
+          document.getElementById("manualLon").value = pos.coords.longitude.toFixed(6);
+          setLocation(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => { alert("GPS error. Using NIT Srinagar default."); },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function useManualLocation() {
+      const lat = parseFloat(document.getElementById("manualLat").value);
+      const lon = parseFloat(document.getElementById("manualLon").value);
+      if (isNaN(lat) || isNaN(lon)) { alert("Invalid coordinates"); return; }
+      setLocation(lat, lon);
+    }
+
+    function setLocation(lat, lon) {
+      if (marker) map.removeLayer(marker);
+      marker = L.marker([lat, lon]).addTo(map);
+      map.setView([lat, lon], 13);
+      document.getElementById("manualLat").value = lat.toFixed(6);
+      document.getElementById("manualLon").value = lon.toFixed(6);
+      envData.lat = lat; envData.lon = lon;
+      fetchWeather(lat, lon);
+    }
+
+    async function fetchWeather(lat, lon) {
+      try {
+        let r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&relative_humidity_2m`);
+        let data = await r.json();
+        let temp = data.current_weather.temperature;
+        let wind = data.current_weather.windspeed;
+        let humidity = data.current_weather.relative_humidity_2m || 50;
+
+        let e = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
+        let ed = await e.json();
+        let altitude = ed.elevation?.[0] ?? 1585;
+
+        let density = airDensity(temp, altitude);
+        envData = { ...envData, temp, wind, altitude, humidity, density, lat, lon };
+        document.getElementById("env").innerHTML = `
+          <strong>🌡️ Temp:</strong> ${temp} °C<br>
+          <strong>🌬️ Wind:</strong> ${wind} m/s<br>
+          <strong>💧 Humidity:</strong> ${humidity} %<br>
+          <strong>🏔️ Altitude:</strong> ${altitude.toFixed(0)} m<br>
+          <strong>🪁 Air Density:</strong> ${density.toFixed(4)} kg/m³
+        `;
+      } catch (err) {
+        document.getElementById("env").innerHTML = "Could not fetch live data – using approximate values";
+      }
+    }
+
+    function airDensity(temp, alt) {
+      let T = temp + 273.15;
+      let P = 101325 * Math.exp(-alt / 8435);
+      return P / (287.05 * T);
+    }
+
+    function thrustModel(kv, propDia, pitchInch, blades, voltage, density) {
+      let rpm = kv * voltage;
+      let n = rpm / 60;
+      let D = propDia * 0.0254;
+      let Ct = 0.10 + 0.025 * (pitchInch / 5) + 0.01 * (blades - 2);
+      Ct = Math.min(0.18, Math.max(0.08, Ct));
+      let thrustN = Ct * density * Math.pow(n, 2) * Math.pow(D, 4) * (1 + 0.3 * (pitchInch / 10));
+      return thrustN / 9.81;
+    }
+
+    function recommendKVAuto(payload, alt, frameSize, rotorCount) {
+      let baseKV = 1800;
+      if (payload > 2 || alt > 2500) baseKV = 920;
+      else if (payload > 1) baseKV = 1000;
+      else if (alt > 1500) baseKV = 1500;
+      else if (payload < 0.5) baseKV = 2300;
+      
+      if (collectedData.length > 10) {
+        const similar = collectedData.filter(s => 
+          Math.abs(s.payload - payload) < 0.3 &&
+          Math.abs(s.weather.altitude - alt) < 300 &&
+          Math.abs(s.frame.size - frameSize) < 1.5 &&
+          s.rotors === rotorCount
+        );
+        if (similar.length > 0) {
+          const avgKV = similar.reduce((sum, s) => sum + s.motorKV, 0) / similar.length;
+          baseKV = Math.round(0.7 * avgKV + 0.3 * baseKV);
+        }
+      }
+      return baseKV;
+    }
+
+    function monteCarlo(weight, totalThrust, wind) {
+      let sum = 0;
+      for (let i = 0; i < 5000; i++) {
+        let w = weight * (1 + (Math.random() - 0.5) * 0.04);
+        let t = totalThrust * (1 + (Math.random() - 0.5) * 0.08);
+        let windVar = wind * (1 + (Math.random() - 0.5) * 0.15);
+        sum += (t / w) / (1 + windVar / 25);
+      }
+      return sum / 5000;
+    }
+
+    function runSimulation() {
+      let frameSize = parseFloat(document.getElementById('frameSizeCustom').value);
+      if (isNaN(frameSize)) frameSize = parseFloat(document.getElementById('frameSizeSelect').value) || 5;
+
+      let payload = parseFloat(document.getElementById("payload").value) || 1;
+      let rotors = parseInt(document.getElementById("rotors").value);
+      let cap = parseFloat(document.getElementById("capacity").value) || 5200;
+      let crating = parseFloat(document.getElementById("crating").value) || 80;
+      let mode = document.getElementById("mode").value;
+      let batteryType = document.getElementById("batteryType").value;
+      let cells = parseInt(document.getElementById("cells").value) || 4;
+      let escVoltage = parseFloat(document.getElementById("escVoltage").value) || (cells * 3.7);
+      let voltage = escVoltage;
+
+      let propDia = parseFloat(document.getElementById("propDiameter").value) || 10;
+      let pitch = parseFloat(document.getElementById("pitch").value) || 4.5;
+      let blades = parseInt(document.getElementById("blades").value) || 2;
+      let width = parseFloat(document.getElementById("propWidth").value) || 1.0;
+
+      let kv;
+      if (mode === "auto") {
+        kv = recommendKVAuto(payload, envData.altitude, frameSize, rotors);
+      } else {
+        kv = parseFloat(document.getElementById("motor").value) || 1800;
+      }
+
+      let frameWeight = 1.2 + rotors * 0.15 + (frameSize * 0.05);
+      let batteryWeight = cap * 0.00018;
+      let totalWeight = payload + frameWeight + batteryWeight;
+
+      let density = envData.density || airDensity(envData.temp, envData.altitude);
+      let thrustPerMotor = thrustModel(kv, propDia, pitch, blades, voltage, density);
+      let totalThrust = thrustPerMotor * rotors;
+
+      let hoverCurrent = (totalWeight * 9.81) / (0.7 * voltage);
+      let avgCurrent = hoverCurrent * 1.4;
+      let usableCapAh = (cap / 1000) * 0.8;
+      let maxSafeCurrent = (cap / 1000) * crating;
+      let flightTimeCalc = (usableCapAh / Math.max(avgCurrent, maxSafeCurrent * 0.6)) * 60;
+      
+      let manualFlyTime = parseFloat(document.getElementById("manualFlyTime").value) || 0;
+      let stability = monteCarlo(totalWeight, totalThrust, envData.wind);
+      let totalWh = (cap / 1000) * voltage;
+      let twr = totalThrust / totalWeight;
+
+      const simResults = { kv, thrustPerMotor, totalThrust, totalWeight, twr, flightTimeCalc, stability };
+      addCurrentSampleToAI(simResults);
+
+      const frameType = document.getElementById('frameType').value;
+
+      let resultHTML = `
+        <div class="space-y-4">
+          <h4 class="font-bold text-lg text-[#1f3c88] mb-3">Simulation Results – Detailed Table</h4>
+          <div class="overflow-x-auto rounded-xl border border-blue-200 shadow-sm bg-white">
+            <table class="w-full text-sm">
+              <thead class="bg-blue-100 text-[#1f3c88">
+                <tr><th class="px-6 py-4 font-semibold text-left">Parameter</th><th class="px-6 py-4 font-semibold text-left">Value</th></tr>
+              </thead>
+              <tbody class="divide-y divide-blue-100 text-gray-700">
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Mode</td><td class="px-6 py-3">${mode === "auto" ? "Auto AI Design" : "Manual Override"}</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Frame Type</td><td class="px-6 py-3">${frameType}</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Frame Size</td><td class="px-6 py-3">${frameSize}"</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Battery Type</td><td class="px-6 py-3">${batteryType}</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Cell Count</td><td class="px-6 py-3">${cells}S</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">ESC Voltage</td><td class="px-6 py-3">${voltage.toFixed(1)} V</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Capacity</td><td class="px-6 py-3">${cap} mAh</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Total Energy</td><td class="px-6 py-3">${totalWh.toFixed(1)} Wh</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">C-Rating</td><td class="px-6 py-3">${crating}C</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Motor KV</td><td class="px-6 py-3">${kv} KV</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Prop Diameter</td><td class="px-6 py-3">${propDia}"</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Pitch</td><td class="px-6 py-3">${pitch}"</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Blades</td><td class="px-6 py-3">${blades}</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Thrust per Motor</td><td class="px-6 py-3">${thrustPerMotor.toFixed(2)} kg</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Total Thrust</td><td class="px-6 py-3">${totalThrust.toFixed(2)} kg</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Drone Weight</td><td class="px-6 py-3">${totalWeight.toFixed(2)} kg</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">TWR</td><td class="px-6 py-3">${twr.toFixed(2)}</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Calculated Flight Time</td><td class="px-6 py-3">${flightTimeCalc.toFixed(1)} min</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">✈️ Manual Fly Time</td><td class="px-6 py-3 font-bold text-blue-800">${manualFlyTime.toFixed(1)} min</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Stability Index</td><td class="px-6 py-3">${stability.toFixed(2)}</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Air Density</td><td class="px-6 py-3">${density.toFixed(4)} kg/m³</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Altitude</td><td class="px-6 py-3">${envData.altitude.toFixed(0)} m</td></tr>
+                <tr class="hover:bg-blue-50"><td class="px-6 py-3 font-medium">Wind</td><td class="px-6 py-3">${envData.wind} m/s</td></tr>
+                <tr class="bg-blue-50 hover:bg-blue-100"><td class="px-6 py-3 font-medium">Temperature</td><td class="px-6 py-3">${envData.temp} °C</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-5 p-4 bg-yellow-50 border border-yellow-300 rounded-2xl text-center text-sm">
+            <strong>🤖 AI Recommendation (updated from ${collectorCount} samples):</strong> For ${payload}kg, frame ${frameSize}", ${rotors} rotors → Try
+            <span class="font-bold text-[#1f3c88]">${kv} KV</span> +
+            <span class="font-bold text-[#1f3c88]">${propDia}"</span> prop
+          </div>
+        </div>
+      `;
+      document.getElementById("result").innerHTML = resultHTML;
+    }
+
+    document.getElementById("mode").addEventListener("change", function() {
+      document.getElementById("manualControls").classList.toggle("hidden", this.value === "auto");
+    });
+
+    document.getElementById('frameSizeSelect').addEventListener('change', function(e) {
+      document.getElementById('frameSizeCustom').value = e.target.value;
+    });
+
+    // Initial weather fetch for NIT Srinagar (34.126, 74.840)
+    fetchWeather(34.126, 74.840);
+  </script>
+</body>
+</html>
